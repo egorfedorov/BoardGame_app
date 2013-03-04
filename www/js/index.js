@@ -1,4 +1,3 @@
-
 var GAME = function(){
 
 	var _self = this;
@@ -70,10 +69,19 @@ var GAME = function(){
 		if(!_self.STOP){
 			_self.the_loop();
 		}
-		_self.animationFrame.call(window, _self.run);
 		
-		   
-          //  window.setTimeout(_self.run, _self.inc_fps);
+		/*
+		Dwa sposoby na wywoływanie pętli gry, klasyczny z timeoutem 1000/60 
+		i nowy podobno lepszy dla mobile.
+		
+		Jestem w trakcie sprawdzania, gdy coś mi wolno chodzi, przełaczam na inny tryb.
+		
+		*/
+		
+	//  window.setTimeout(_self.run, _self.inc_fps);
+		
+		_self.animationFrame.call(window, _self.run);
+   
 
 	}
 	
@@ -166,8 +174,7 @@ var GAME = function(){
 			
 		_self._clock =  playTime ;
 
-		if( maxMonster >  monsterCounter ){
-				
+		if( maxMonster >  monsterCounter ){				
 			var reSpownTimer = (T - lastRespawn)  ;
 			
 			if(  s.monsterSpawnRate <= reSpownTimer ){
@@ -175,6 +182,10 @@ var GAME = function(){
 					var newMonster = _self.the_board.createMonster(T);
 					
 					if(newMonster){
+					
+						/*
+							brakuje tu paru funkcji
+						*/
 					
 						boardElements[newMonster.id].monster = newMonster;
 					//	boardElements[newMonster.id].locked = true;
@@ -189,12 +200,7 @@ var GAME = function(){
 						
 						
 						_self.monsterCounter++;
-
 						_self.the_board.toggle(newMonster.id, newMonster.type, true);
-						
-
-						
-						
 						_self.lastRespawn = newMonster.born;
 
 					}
@@ -217,12 +223,6 @@ var GAME = function(){
 		var log_delta = document.getElementById("log_delta");
 		var log_cpu = document.getElementById("log_cpu");
 		var log_free = document.getElementById("log_free");
-
-		
-
-
-
-		
 			log_delta.innerHTML =  "delta time :   " + _self.helper.round(dt*1000, 10) + " ms" , 20, 20  ;
 			log_cpu.innerHTML = "cpu frame  :   " + _self.helper.round( _self.frame_cpu *1000, 10) + " ms" , 20, 60  ;
 			log_free.innerHTML = "free frame :   " + _self.helper.round( _self.next_frame *1000, 10) + " ms" , 20, 100 ;
@@ -237,7 +237,6 @@ var GAME = function(){
 	
 		log_delta.innerHTML = (_self.tap.hit);
 	//	log_cpu.innerHTML = (_self.tap.empty);
-	//	log_free
 		
 	};
 	
@@ -293,10 +292,10 @@ var GAME = function(){
 	    
 	    createMonster: function(born){
 	    
-	    	this.s = _self.settings;
-	    	this.type = Math.floor((Math.random()* (s.monsterTypes+1) )+0);
-	    	this.fieldId = this._findPlace();
-	    	this.newMonster = {
+	    	var s = _self.settings,
+	    	type = Math.floor((Math.random()* (s.monsterTypes+1) )+0),
+	    	fieldId = this._findPlace(),
+	    	newMonster = {
 						id: fieldId,
 						born: born,
 						type: type,
@@ -304,9 +303,6 @@ var GAME = function(){
 						isStronger: false	
 				};
 				
-				
-			
-					
 				return this.newMonster;
 		},
 		
@@ -421,7 +417,7 @@ var GAME = function(){
 			
 			if(data.monster.id){
 				this.killMonster(data.monster);
-				_self.tap.hit++;
+				_self.tap.hit = _self.tap.hit+1;
 			}else{
 				_self.tap.empty--;
 			   // _self.actionDevice.vibrate();
