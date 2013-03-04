@@ -303,7 +303,7 @@ var GAME = function(){
 						isStronger: false	
 				};
 				
-				return this.newMonster;
+				return newMonster;
 		},
 		
 		getMonsterIdByPosition: function(x,y, id){
