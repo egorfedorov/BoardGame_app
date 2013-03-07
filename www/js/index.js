@@ -18,14 +18,21 @@ var GAME = function(){
 	this.AppBody = document.body;
 	
 	this.boardElements = [];
+	
+	
+	// zawiera pole z których można losować
 	this.fieldsPool = [];
 	
 	this.inputQueue = [];
+	this.redrawQueue = {
+		updateFields: [],
+		updateMonsterStatus: []
+	};
+	
 	this.lastRespawn = false;
 	
 	this.events = {};
 	this.lastEvent = 0;
-	this.tap = false;
 
 	
 	this.animationFrame = window.requestAnimationFrame ||
@@ -34,12 +41,8 @@ var GAME = function(){
             
 	this.monsterCounter = 0;
 	
-	this.tap = {hit:0, empty:0};
 	
-	
-	this.inv_fps = 1000/ 60;
-	this.next_frame = 0;
-	this.frame_cpu = 0;
+	this.inv_fps = 1000 /60;
 
 
 /*============*/
@@ -78,7 +81,7 @@ var GAME = function(){
 		
 		*/
 		
-	//  window.setTimeout(_self.run, _self.inc_fps);
+	 // window.setTimeout(_self.run, _self.inv_fps);
 		
 		_self.animationFrame.call(window, _self.run);
    
@@ -113,44 +116,43 @@ var GAME = function(){
 		
 		
 		clock = new Date() ;
-		var end_time = clock.getTime();
-		var dt = ((end_time - start_time)/1000);
-		
-		_self.frame_cpu = dt ;
-		_self.next_frame = _self.helper.clamp( _self.inv_fps-dt, 0, _self.inv_fps ) ;// clamp in case of lag
-		
+		var end_time = clock.getTime();	
 	}
 	
 
 	this.INPUT = function(T){
 	
-		if(_self.tap){
+	
 		
 			var queue = _self.inputQueue;
 			
+			//console.log(queue.length);
+			
 			if(queue.length){
-				for(var i=0; i < queue.length; i++){
-					
-					//var evTS = T- queue[i].ev.timeStamp;
-					
-					
+				//for(var i=0; i < queue.length; i++){
+				
+				while(queue.length){
+				
+				console.log('info');
 					
 						var target = queue[0].ev.target.getAttribute('id');
 					
 						switch(target){
 							
 							case _self.board:
-								_self.the_board.event(queue[i]);
+								_self.the_board.event(queue[0]);
 							break;
 							
 						}
-						queue.splice(i, 1);		
+						queue.splice(0, 1);		
 				}				
 			}
 			
-		}
+		
 
 	}
+	
+	
 	
 	this.UPDATE = function(T, dt){
 		var s = _self.settings,
@@ -183,61 +185,53 @@ var GAME = function(){
 					
 					if(newMonster){
 					
-						/*
-							brakuje tu paru funkcji
-						*/
-					
 						boardElements[newMonster.id].monster = newMonster;
-					//	boardElements[newMonster.id].locked = true;
-						
-						
-						
-						var updateMonster = _self.the_board.updateMonsters(newMonster);
-						
-						if(updateMonster){
-							_self.the_board.toggleFreez(updateMonster, true);
-						}
-						
-						
-						_self.monsterCounter++;
-						_self.the_board.toggle(newMonster.id, newMonster.type, true);
-						_self.lastRespawn = newMonster.born;
+						boardElements[newMonster.id].isMonster = true;
+					
+						_self.redrawQueue['updateFields'].push(newMonster);
+						_self.redrawQueue['updateMonsterStatus'].push(_self.the_board.updateMonsters(newMonster));
 
+						// Pomaga obliczyć powstanie następnego potwora.
+						_self.lastRespawn = newMonster.born;
+						_self.monsterCounter++;
 					}
 			}
 
 		}
 		else if(boardElements.length ==  monsterCounter ){
-
-
 			_self.STOP = true;
 			_self._clock = 'KONIEC' ;
-			
 		}
 		
 		
-		var log_delta = document.getElementById("log_cpu");
-		log_delta.innerHTML =  "time : " + _self._clock;
 
-		/*
-		var log_delta = document.getElementById("log_delta");
-		var log_cpu = document.getElementById("log_cpu");
-		var log_free = document.getElementById("log_free");
-			log_delta.innerHTML =  "delta time :   " + _self.helper.round(dt*1000, 10) + " ms" , 20, 20  ;
-			log_cpu.innerHTML = "cpu frame  :   " + _self.helper.round( _self.frame_cpu *1000, 10) + " ms" , 20, 60  ;
-			log_free.innerHTML = "free frame :   " + _self.helper.round( _self.next_frame *1000, 10) + " ms" , 20, 100 ;
-			*/
 	}
 	
 	this.REDRAW = function(){
 	
-	var log_delta = document.getElementById("log_delta");
-	var log_cpu = document.getElementById("log_cpu");
-	var log_free = document.getElementById("log_free");
+		var rQ = _self.redrawQueue;
 	
-		log_delta.innerHTML = (_self.tap.hit);
-	//	log_cpu.innerHTML = (_self.tap.empty);
+	
+	var log_delta = document.getElementById("log_cpu");
+		log_delta.innerHTML =  "time : " + _self._clock;
 		
+		var log_free = document.getElementById("log_free");
+		log_free.innerHTML = _self.lastEvent;
+
+
+	// MONSTER 
+	
+		console.log(rQ.updateMonsterStatu);
+	
+						if(rQ.updateMonsterStatus){
+							_self.the_board.toggleFreez(rQ.updateMonsterStatus, true);
+						}
+						
+						if(rQ.updateField){
+							_self.the_board.toggle(newMonster.id, newMonster.type, true);
+						}
+						
+
 	};
 	
 	this.the_board = { 
@@ -254,7 +248,7 @@ var GAME = function(){
 							{
 								x:i,
 								y:j,
-								locked: false,
+								isMonster: false,
 								monster: {
 									born: false,
 									type: false,
@@ -288,6 +282,7 @@ var GAME = function(){
 							index++;
 					}
 			}
+		
 	    },
 	    
 	    createMonster: function(born){
@@ -313,14 +308,23 @@ var GAME = function(){
 				return (e.x == x && e.y == y);
 			});
 			
+			var outID;
+			
 			
 			
 			if(idx[0]){
 				if( idx[0].monster.id && 
 					idx[0].monster.type == els[id].monster.type){
-					return idx[0].monster.id;
+					outID =  idx[0].monster.id;
 				}
 			}
+			
+			if(!!outID){
+				return outID;
+			}else {
+				return false;
+			}
+			
 			
 		},
 		
@@ -347,6 +351,8 @@ var GAME = function(){
 				for(var x=-1; x <= 1; x++){
 						for(var y= -1; y <= 1; y++){
 							var nearMonsterId = _self.the_board.getMonsterIdByPosition( (el[mId].x - x) , (el[mId].y - y), mId);
+							
+							
 								if(nearMonsterId && mId != nearMonsterId){
 									fields.push( nearMonsterId );
 								}	
@@ -361,8 +367,9 @@ var GAME = function(){
 			var fieldId = Math.floor((Math.random() * (  _self.fieldsPool.length) ));
 			var outId = _self.fieldsPool[fieldId];
 			
-			
+			/*przepisuje ostatni element do wylosowanego */
 			_self.fieldsPool[fieldId] = _self.fieldsPool[_self.fieldsPool.length - 1];
+			/* wyrzuca ostatni element Tablicy */
 			_self.fieldsPool.pop();
 			
 			return outId;
@@ -370,15 +377,18 @@ var GAME = function(){
 		
 		
 		killMonster: function(monster){
+			var mID = monster.id;
 		
 			_self.monsterCounter--;
+/// dodja do kolejki usuniete potowry
+			_self.fieldsPool.push(mID);
+			_self.boardElements[mID].isMonster = false;
 			
-			_self.the_board.toggle(monster.id, monster.type, false);
-			
-			
-			_self.fieldsPool.push(monster.id);		
+			return true;	
 		},
 		
+		
+		// Całą funkcja togle powinna iść do głównej pętli rysowania
 		toggle: function(id, type, show){
 			var monsterField = '#field_'+id+' em';
 			
@@ -416,7 +426,11 @@ var GAME = function(){
 		//zamienić, monster table musi czyscic
 			
 			if(data.monster.id){
-				this.killMonster(data.monster);
+				var isKilled = this.killMonster(data.monster);
+				
+				
+				
+				
 				_self.tap.hit = _self.tap.hit+1;
 			}else{
 				_self.tap.empty--;
@@ -431,22 +445,31 @@ var GAME = function(){
 		
 			var eventHolder = document.getElementById(_self.board);
 		
-			_self.events['board'] = Hammer(eventHolder).on("tap doubletap", _self.the_bind.tapMonster);
+			//_self.events['board'] = Hammer(eventHolder).on("touch", this.tapMonster);
+			//_self.events['board'] = Hammer(eventHolder).on("doubletap", this.tapMonster);
 			_self.events['board'] = Hammer(eventHolder).on("release", _self.the_bind.tapMonster);
 			
 		},
 
 		tapMonster: function(event) {
+			event.preventDefault();
 				_self.tap = true;
+				
+				_self.lastEvent = _self.lastEvent+1;
+				
+			
+			console.log(event);
 				
 				if(event.gesture){
 					var target = event.gesture.target;	
+				
 				
 				
 					var id = parseInt(target.parentNode.getAttribute('data-index'),10 );
 					var data = _self.boardElements[id];
 					
 					
+					//console.log(data);
 					
 					//normalne bindowanie
 					//_self.the_board.event({ev: event, data: data});
@@ -457,7 +480,7 @@ var GAME = function(){
 					
 				}	
 				
-
+				return false;
 		 }
 	}
     

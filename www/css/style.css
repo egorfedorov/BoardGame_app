@@ -46,6 +46,8 @@ ul {list-style: none;}
 		z-index: 20; 
 		background-size: 100%;
 		-webkit-animation: cssAnimation 0.2s 1 cubic-bezier(1.000, -0.600, 0.000, 1.650);
+		-webkit-backface-visibility: hidden; /* przyśpiesza  */
+		-webkit-perspective: 1000;/* przyśpiesza  */
 		}
 		
 #game-board li.active {border-radius: 64px; background-color: red; background-image: none;}
@@ -56,23 +58,24 @@ ul {list-style: none;}
 	.monster_3 {background-image: url('../img/m-3@2x.png');}
 	
 	#game-board li em.monster_4 {background-image: url('../img/m-4@2x.png');
-		-webkit-animation: play .8s steps(10) infinite;
-		background-size:500px;
+			-webkit-animation: play .8s steps(10) infinite;
+			background-size:500px;
 		    width: 50px;
 		    margin-left: 10px;
-    height: 72px;	
+		    height: 72px;	
 	}
 
 	
 	
  
 	
-	.block {background-image: url('../img/freez@2x.png'); background-size: cover;}
+	.block {background-image: url('../img/freez@2x.png'); background-size: 100%;}
 	
 
 @-webkit-keyframes cssAnimation {
-from { -webkit-transform: rotate(40deg) scale(0.1)   }
-to { -webkit-transform: rotate(0deg) scale(1)  }
+	0% { -webkit-transform: rotate(40deg) scale(0.1)   }
+	50% { -webkit-transform: rotate(40deg) scale(1.5)  }
+	100% { -webkit-transform: rotate(0deg) scale(1)  }
 }
 	
 	h2 {
